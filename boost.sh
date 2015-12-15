@@ -19,7 +19,7 @@
 # same directory as this script, and run "./boost.sh". Grab a cuppa. And voila.
 #===============================================================================
 
-: ${BOOST_LIBS:="random regex graph random chrono thread signals filesystem system date_time"}
+: ${BOOST_LIBS:="atomic random regex graph random chrono thread signals filesystem system date_time"}
 : ${IPHONE_SDKVERSION:=`xcodebuild -showsdks | grep iphoneos | egrep "[[:digit:]]+\.[[:digit:]]+" -o | tail -1`}
 : ${OSX_SDKVERSION:=10.9}
 : ${XCODE_ROOT:=`xcode-select -print-path`}
@@ -221,11 +221,9 @@ scrunchAllLibsTogetherInOneLibPerPlatform()
         $ARM_DEV_CMD lipo "iphone-build/stage/lib/libboost_$NAME.a" -thin armv6 -o $IOSBUILDDIR/armv6/libboost_$NAME.a
         $ARM_DEV_CMD lipo "iphone-build/stage/lib/libboost_$NAME.a" -thin armv7 -o $IOSBUILDDIR/armv7/libboost_$NAME.a
         $ARM_DEV_CMD lipo "iphone-build/stage/lib/libboost_$NAME.a" -thin armv7s -o $IOSBUILDDIR/armv7s/libboost_$NAME.a
-		$ARM_DEV_CMD lipo "iphone-build/stage/lib/libboost_$NAME.a" -thin arm64 -o $IOSBUILDDIR/arm64/libboost_$NAME.a
-
-		$ARM_DEV_CMD lipo "iphonesim-build/stage/lib/libboost_$NAME.a" -thin i386 -o $IOSBUILDDIR/i386/libboost_$NAME.a
-		$ARM_DEV_CMD lipo "iphonesim-build/stage/lib/libboost_$NAME.a" -thin x86_64 -o $IOSBUILDDIR/x86_64/libboost_$NAME.a
-
+	$ARM_DEV_CMD lipo "iphone-build/stage/lib/libboost_$NAME.a" -thin arm64 -o $IOSBUILDDIR/arm64/libboost_$NAME.a
+	$ARM_DEV_CMD lipo "iphonesim-build/stage/lib/libboost_$NAME.a" -thin i386 -o $IOSBUILDDIR/i386/libboost_$NAME.a
+	$ARM_DEV_CMD lipo "iphonesim-build/stage/lib/libboost_$NAME.a" -thin x86_64 -o $IOSBUILDDIR/x86_64/libboost_$NAME.a
         $ARM_DEV_CMD lipo "osx-build/stage/lib/libboost_$NAME.a" -thin i386 -o $OSXBUILDDIR/i386/libboost_$NAME.a
         $ARM_DEV_CMD lipo "osx-build/stage/lib/libboost_$NAME.a" -thin x86_64 -o $OSXBUILDDIR/x86_64/libboost_$NAME.a
     done
@@ -237,12 +235,17 @@ scrunchAllLibsTogetherInOneLibPerPlatform()
         (cd $IOSBUILDDIR/armv6/obj; ar -x ../$NAME );
         (cd $IOSBUILDDIR/armv7/obj; ar -x ../$NAME );
         (cd $IOSBUILDDIR/armv7s/obj; ar -x ../$NAME );
-		(cd $IOSBUILDDIR/arm64/obj; ar -x ../$NAME );
+	(cd $IOSBUILDDIR/arm64/obj; ar -x ../$NAME );
         (cd $IOSBUILDDIR/i386/obj; ar -x ../$NAME );
-		(cd $IOSBUILDDIR/x86_64/obj; ar -x ../$NAME );
-
+	(cd $IOSBUILDDIR/x86_64/obj; ar -x ../$NAME );
         (cd $OSXBUILDDIR/i386/obj; ar -x ../$NAME );
         (cd $OSXBUILDDIR/x86_64/obj; ar -x ../$NAME );
+    done
+
+    echo "Creating Universal .a files"
+    for NAME in $BOOST_LIBS; do
+        echo Creating $NAME ...
+        $ARM_DEV_CMD lipo -create "iphone-build/stage/lib/libboost_$NAME.a" "iphonesim-build/stage/lib/libboost_$NAME.a" -output $IOSBUILDDIR/libboost_$NAME.a
     done
 
     echo "Linking each architecture into an uberlib ($ALL_LIBS => libboost.a )"
